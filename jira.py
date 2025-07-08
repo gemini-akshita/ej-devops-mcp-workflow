@@ -1,6 +1,6 @@
 # import requests
 # import json
-# from requests.auth import HTTPBasicAuth
+from requests.auth import HTTPBasicAuth
 
 # def create_jira_ticket(summary: str, description: str) -> str:
 #     """Create a new Jira ticket"""
