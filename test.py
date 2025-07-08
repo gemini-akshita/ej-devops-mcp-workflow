@@ -69,16 +69,36 @@ def create_github_pr(title, description, commit_message=None, token=None):
             print("Error: Not a GitHub repository")
             return None
         
+        # Check if we're on a default branch (master/main)
+        if current_branch in ['master', 'main']:
+            print(f"You're on the default branch '{current_branch}'. Creating a feature branch...")
+            
+            # Create a new feature branch
+            feature_branch = f"feature/{title.lower().replace(' ', '-').replace('/', '-')}"
+            subprocess.run(['git', 'checkout', '-b', feature_branch], check=True)
+            current_branch = feature_branch
+            print(f"Created and switched to branch: {current_branch}")
+        
         # Push current branch to origin
         print(f"Pushing branch '{current_branch}' to origin...")
         subprocess.run(['git', 'push', 'origin', current_branch], check=True)
+        
+        # Determine the base branch (what to merge into)
+        base_branch = 'main'
+        
+        # Check if main branch exists, otherwise use master
+        try:
+            subprocess.check_output(['git', 'rev-parse', '--verify', 'origin/main'], 
+                                   encoding='utf-8', stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            base_branch = 'master'
         
         # Create PR via GitHub API
         pr_data = {
             'title': title,
             'body': description,
             'head': current_branch,
-            'base': 'main'  # Change to 'master' if your default branch is master
+            'base': base_branch
         }
         
         headers = {
@@ -103,8 +123,17 @@ def create_github_pr(title, description, commit_message=None, token=None):
             
             return pr_url
         else:
-            error_info = response.json()
-            print(f"Failed to create PR: {error_info.get('message', 'Unknown error')}")
+            try:
+                error_info = response.json()
+                print(f"Failed to create PR: {error_info.get('message', 'Unknown error')}")
+                print(f"Status code: {response.status_code}")
+                print(f"Full error response: {error_info}")
+                if 'errors' in error_info:
+                    for error in error_info['errors']:
+                        print(f"Error detail: {error}")
+            except:
+                print(f"Failed to create PR. Status code: {response.status_code}")
+                print(f"Raw response: {response.text}")
             return None
             
     except subprocess.CalledProcessError as e:
@@ -120,11 +149,6 @@ def create_github_pr(title, description, commit_message=None, token=None):
 
 # Example usage:
 if __name__ == "__main__":
-    # Option 1: Use PR title as commit message
-    # pr_url = create_github_pr(
-    #     title="Add new feature", 
-    #     description="This PR adds a new authentication feature"
-    # )
     
     # Option 2: Specify custom commit message
     pr_url = create_github_pr(

@@ -118,6 +118,7 @@ def create_pr(token: str, owner: str, repo: str, title: str, body: str,
 
 
 def main():
+    """Main function to create PR with AI analysis."""
     
     REPO_OWNER = "gemini-akshita"
     REPO_NAME = "ej-devops-mcp-workflow"
