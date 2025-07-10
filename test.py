@@ -5,6 +5,9 @@ import logging
 from functools import wraps
 from threading import Thread, Lock
 from typing import Callable, List, Dict, Any
+import time
+from functools import lru_cache
+from typing import Optional, Tuple
 
 print("Hello, World Test124453dsf!")
 print("Hello, World Test!")
@@ -71,3 +74,57 @@ class FileDataProcessor:
             logging.info(f"Summary exported to {output_file}")
         except Exception as e:
             logging.error(f"Failed to write summary: {e}")
+
+class EditDistanceError(Exception):
+    """Custom exception for edit distance calculation errors."""
+    pass
+
+
+def benchmark(func):
+    """Decorator to benchmark function execution time."""
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        end = time.time()
+        print(f"[Benchmark] {func.__name__} took {end - start:.6f} seconds")
+        return result
+    return wrapper
+
+
+@benchmark
+def compute_edit_distance(s1: str, s2: str, verbose: Optional[bool] = False) -> Tuple[int, str]:
+    """
+    Computes the Levenshtein distance (edit distance) between two strings using recursion + memoization.
+
+    Args:
+        s1 (str): First string.
+        s2 (str): Second string.
+        verbose (bool): If True, prints the step-by-step transformation.
+
+    Returns:
+        Tuple[int, str]: Minimum number of operations and a summary of the transformation path.
+    """
+    if not isinstance(s1, str) or not isinstance(s2, str):
+        raise EditDistanceError("Both inputs must be strings")
+
+    @lru_cache(maxsize=None)
+    def dp(i: int, j: int) -> int:
+        if i == 0:
+            return j
+        if j == 0:
+            return i
+        if s1[i - 1] == s2[j - 1]:
+            return dp(i - 1, j - 1)
+        return 1 + min(
+            dp(i - 1, j),    # Deletion
+            dp(i, j - 1),    # Insertion
+            dp(i - 1, j - 1) # Substitution
+        )
+
+    distance = dp(len(s1), len(s2))
+
+    summary = f"Edit distance between '{s1}' and '{s2}' is {distance}."
+    if verbose:
+        summary += " (computed with memoized recursion)"
+
+    return distance, summary
