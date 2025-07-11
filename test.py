@@ -30,6 +30,7 @@ def log_and_thread_safe(lock: Lock):
         @wraps(func)
         def wrapper(*args, **kwargs):
             with lock:
+                print(f"Executing {func.__name__} with args={args} kwargs={kwargs}")
                 logging.info(f"Executing {func.__name__} with args={args} kwargs={kwargs}")
                 try:
                     result = func(*args, **kwargs)
