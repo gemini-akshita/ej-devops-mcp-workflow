@@ -10,6 +10,8 @@ class APIResponse(BaseModel):
     status: int
     data: dict
 
+print("Hello, World Test124453dsf!")
+
 
 class ExternalAPIError(Exception):
     """Custom exception for API-related issues."""
