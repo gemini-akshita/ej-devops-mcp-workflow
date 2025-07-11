@@ -16,6 +16,11 @@ import os
 import threading
 import inspect
 import asyncio
+import os
+import fnmatch
+import logging
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 print("Hello, World Test124453dsf!")
 print("Hello, World Test!")
@@ -50,16 +55,44 @@ class FileDataProcessor:
         self.lock = Lock()
 
     @log_and_thread_safe(lock=Lock())
-    def process_files(self, pattern: str):
-        threads = []
-        for filename in os.listdir(self.directory):
-            if filename.endswith('.txt'):
-                filepath = os.path.join(self.directory, filename)
-                thread = Thread(target=self._process_single_file, args=(filepath, pattern))
-                threads.append(thread)
-                thread.start()
-        for t in threads:
-            t.join()
+    # def process_files(self, pattern: str):
+    #     threads = []
+    #     for filename in os.listdir(self.directory):
+    #         if filename.endswith('.txt'):
+    #             filepath = os.path.join(self.directory, filename)
+    #             thread = Thread(target=self._process_single_file, args=(filepath, pattern))
+    #             threads.append(thread)
+    #             thread.start()
+    #     for t in threads:
+    #         t.join()
+
+    def process_files(self, pattern: str, max_workers: int = 5):
+        """Process files matching a pattern using multithreading."""
+        start_time = time.time()
+        logging.info("Started processing files...")
+
+        matched_files = [
+            os.path.join(self.directory, f)
+            for f in os.listdir(self.directory)
+            if fnmatch.fnmatch(f, pattern)
+        ]
+
+        def safe_process(filepath):
+            try:
+                logging.info(f"Processing file: {filepath}")
+                self._process_single_file(filepath, pattern)
+                logging.info(f"Completed file: {filepath}")
+            except Exception as e:
+                logging.error(f"Failed to process {filepath}: {e}", exc_info=True)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(safe_process, file) for file in matched_files]
+            for future in as_completed(futures):
+                # Optionally process results or exceptions
+                future.result()  # Re-raise exceptions if any occurred
+
+        end_time = time.time()
+        logging.info(f"All files processed in {end_time - start_time:.2f} seconds.")
 
     def _process_single_file(self, filepath: str, pattern: str):
         try:
