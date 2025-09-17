@@ -8,6 +8,14 @@ from typing import Callable, List, Dict, Any
 import time
 from functools import lru_cache
 from typing import Optional, Tuple
+import time
+import functools
+import logging
+import psutil
+import os
+import threading
+import inspect
+import asyncio
 
 print("Hello, World Test124453dsf!")
 print("Hello, World Test!")
@@ -22,6 +30,7 @@ def log_and_thread_safe(lock: Lock):
         @wraps(func)
         def wrapper(*args, **kwargs):
             with lock:
+                print(f"Executing {func.__name__} with args={args} kwargs={kwargs}")
                 logging.info(f"Executing {func.__name__} with args={args} kwargs={kwargs}")
                 try:
                     result = func(*args, **kwargs)
@@ -81,14 +90,45 @@ class EditDistanceError(Exception):
 
 
 def benchmark(func):
-    """Decorator to benchmark function execution time."""
-    def wrapper(*args, **kwargs):
-        start = time.time()
-        result = func(*args, **kwargs)
-        end = time.time()
-        print(f"[Benchmark] {func.__name__} took {end - start:.6f} seconds")
+    
+    call_count = 0
+    lock = threading.Lock()
+    
+    @functools.wraps(func)
+    def sync_wrapper(*args, **kwargs):
+        nonlocal call_count
+        with lock:
+            call_count += 1
+        
+        process = psutil.Process(os.getpid())
+        mem_before = process.memory_info().rss / 1024 / 1024
+        cpu_before = psutil.cpu_percent(interval=None)
+
+        start_time = time.perf_counter()
+        try:
+            result = func(*args, **kwargs)
+            success = True
+        except Exception as e:
+            result = None
+            success = False
+            logging.error(f"Exception in {func.__name__}: {e}", exc_info=True)
+        end_time = time.perf_counter()
+
+        mem_after = process.memory_info().rss / 1024 / 1024
+        cpu_after = psutil.cpu_percent(interval=None)
+
+        elapsed = end_time - start_time
+        mem_delta = mem_after - mem_before
+
+        log_message = (
+            f"[Benchmark] Function: {func.__name__} | Time: {elapsed:.6f}s | "
+            f"Memory Change: {mem_delta:.2f} MB | CPU: {cpu_after - cpu_before:.2f}% | "
+            f"Calls: {call_count} | Success: {success}"
+        )
+        print(log_message)
+        logging.info(log_message)
+
         return result
-    return wrapper
 
 
 @benchmark
