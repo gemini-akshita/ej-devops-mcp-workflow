@@ -367,5 +367,5 @@ def commit_and_push_branch(commit_message: str = None, branch_name: str = None) 
     if not GITHUB_TOKEN.startswith('ghp_') and not GITHUB_TOKEN.startswith('github_pat_'):
         debug_info["issues"].append("GitHub token format may be invalid")
     
-# if __name__ == "__main__":
-#     mcp.run(transport="sse")
+if __name__ == "__main__":
+    mcp.run(transport="sse")
