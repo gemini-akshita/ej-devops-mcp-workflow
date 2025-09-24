@@ -270,15 +270,15 @@ def commit_and_push_branch(commit_message: str = None, branch_name: str = None) 
         commands_executed.append(f'git commit -m "{commit_message}"')
         
         # Ensure remote is set
-        try:
-            remote_url = subprocess.run(['git', 'remote', 'get-url', 'origin'], 
-                                      capture_output=True, text=True, check=True).stdout.strip()
-            if remote_url != GITHUB_REPO_URL:
-                subprocess.run(['git', 'remote', 'set-url', 'origin', GITHUB_REPO_URL], check=True)
-                commands_executed.append(f"git remote set-url origin {GITHUB_REPO_URL}")
-        except subprocess.CalledProcessError:
-            subprocess.run(['git', 'remote', 'add', 'origin', GITHUB_REPO_URL], check=True)
-            commands_executed.append(f"git remote add origin {GITHUB_REPO_URL}")
+        # try:
+        #     remote_url = subprocess.run(['git', 'remote', 'get-url', 'origin'], 
+        #                               capture_output=True, text=True, check=True).stdout.strip()
+        #     if remote_url != GITHUB_REPO_URL:
+        #         subprocess.run(['git', 'remote', 'set-url', 'origin', GITHUB_REPO_URL], check=True)
+        #         commands_executed.append(f"git remote set-url origin {GITHUB_REPO_URL}")
+        # except subprocess.CalledProcessError:
+        #     subprocess.run(['git', 'remote', 'add', 'origin', GITHUB_REPO_URL], check=True)
+        #     commands_executed.append(f"git remote add origin {GITHUB_REPO_URL}")
         
         # Push to remote
         subprocess.run(['git', 'push', '-u', 'origin', branch_name], check=True)
