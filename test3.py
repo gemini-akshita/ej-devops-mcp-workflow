@@ -7,55 +7,7 @@ from typing import Dict, Any
 import httpx
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("one-command", port=8504)
 
-@mcp.tool()
-async def create_jira_ticket(summary: str, description: str) -> Dict[str, Any]:
-    """Create a new Jira ticket"""
-    
-    url = f"{JIRA_BASE_URL}/rest/api/3/issue"
-    
-    ticket_data = {
-        "fields": {
-            "project": {"key": JIRA_PROJECT_KEY},
-            "summary": summary,
-            "description": {
-                "type": "doc",
-                "version": 1,
-                "content": [{
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": description}]
-                }]
-            },
-            "issuetype": {"name": "Task"}
-        }
-    }
-    
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url, 
-                json=ticket_data, 
-                headers={"Accept": "application/json", "Content-Type": "application/json"},
-                auth=(JIRA_EMAIL, JIRA_API_TOKEN)
-            )
-            response.raise_for_status()
-            
-        result = response.json()
-        return {
-            "success": True,
-            "ticket_key": result["key"],
-            "ticket_url": f"{JIRA_BASE_URL}/browse/{result['key']}",
-            "error": None
-        }
-            
-    except Exception as e:
-        return {
-            "success": False,
-            "ticket_key": None,
-            "ticket_url": None,
-            "error": str(e)
-        }
 
 def get_default_branch():
     """Get the default branch (main or master)"""
